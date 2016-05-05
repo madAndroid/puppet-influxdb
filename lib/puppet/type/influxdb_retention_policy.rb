@@ -9,6 +9,16 @@ Puppet::Type.newtype(:influxdb_retention_policy) do
     desc 'The name of the retention to manage.'
   end
 
+  newproperty(:admin_username) do
+    desc 'The username of the admin user to manage Influxdb (optional)'
+    newvalue(/\w+/)
+  end
+
+  newproperty(:admin_password) do
+    desc 'The password of the admin user to manage Influxdb (optional)'
+    newvalue(/\w*/)
+  end
+
   def munge_boolean(value)
     case value
     when true, "true", :true

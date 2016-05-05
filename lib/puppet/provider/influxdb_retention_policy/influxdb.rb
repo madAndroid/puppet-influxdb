@@ -1,7 +1,8 @@
-Puppet::Type.type(:influxdb_retention_policy).provide(:ruby) do
+require File.expand_path(File.join(File.dirname(__FILE__), '..', 'influxdb'))
+Puppet::Type.type(:influxdb_retention_policy).provide(:influxdb, :parent => Puppet::Provider::InfluxDB) do
   desc 'Manages InfluxDB retention policy.'
 
-commands :influx_cli => '/usr/bin/influx'
+  commands :influx_cli => '/usr/bin/influx'
 
   mk_resource_methods
 
@@ -13,7 +14,7 @@ commands :influx_cli => '/usr/bin/influx'
   def self.instances
     instances = []
     begin
-      dbs = influx_cli(['-execute', 'show databases'])
+      dbs = influx_cli([command_args, '-execute', 'show databases'].compact)
     rescue Puppet::ExecutionFailure => e
       Puppet.debug("#show databases had an error -> #{e.inspect}")
       return nil
@@ -22,7 +23,7 @@ commands :influx_cli => '/usr/bin/influx'
 
     databases.collect do |db|
       begin
-        output = influx_cli(['-execute', "show retention policies on #{db}"].compact)
+        output = influx_cli([command_args, '-execute', "show retention policies on #{db}"].compact)
       rescue Puppet::ExecutionFailure => e
         Puppet.debug("#show retention policies had an error -> #{e.inspect}")
         return nil
@@ -42,7 +43,7 @@ commands :influx_cli => '/usr/bin/influx'
       end
     end
 
-  return instances
+    return instances
   end
 
   def self.prefetch(resources)
@@ -55,15 +56,15 @@ commands :influx_cli => '/usr/bin/influx'
 
   def flush
     if @property_flush[:ensure] == :absent
-        influx_cli(['-execute', "drop RETENTION POLICY #{resource[:name]} ON #{resource[:database]}"].compact)
+        influx_cli([command_args, '-execute', "drop RETENTION POLICY #{resource[:name]} ON #{resource[:database]}"].compact)
         return
     end
     short_ret_name = "#{resource[:name]}".split('@').first
     if @property_flush[:ensure] == :present
       if resource[:is_default]
-        influx_cli(['-execute', "create RETENTION POLICY \"#{short_ret_name}\" ON #{resource[:database]} DURATION #{resource[:duration]} REPLICATION #{resource[:replication]} DEFAULT"].compact)
+        influx_cli([command_args, '-execute', "create RETENTION POLICY \"#{short_ret_name}\" ON #{resource[:database]} DURATION #{resource[:duration]} REPLICATION #{resource[:replication]} DEFAULT"].compact)
       else
-        influx_cli(['-execute', "create RETENTION POLICY \"#{short_ret_name}\" ON #{resource[:database]} DURATION #{resource[:duration]} REPLICATION #{resource[:replication]}"].compact)
+        influx_cli([command_args, '-execute', "create RETENTION POLICY \"#{short_ret_name}\" ON #{resource[:database]} DURATION #{resource[:duration]} REPLICATION #{resource[:replication]}"].compact)
       end
       return
     end
@@ -72,7 +73,7 @@ commands :influx_cli => '/usr/bin/influx'
       cmd_arguments << ' DURATION ' << @property_flush[:duration] if @property_flush[:duration]
       cmd_arguments << ' REPLICATION ' << @property_flush[:replication] if @property_flush[:replication]
       cmd_arguments << ' DEFAULT' if @property_flush[:is_default]
-      influx_cli(['-execute', "#{cmd_arguments}"].compact)
+      influx_cli([command_args, '-execute', "#{cmd_arguments}"].compact)
     end
   end
 

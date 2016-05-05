@@ -1,4 +1,5 @@
-Puppet::Type.type(:influxdb_database).provide(:ruby) do
+require File.expand_path(File.join(File.dirname(__FILE__), '..', 'influxdb'))
+Puppet::Type.type(:influxdb_database).provide(:influxdb, :parent => Puppet::Provider::InfluxDB) do
   desc 'Manages InfluxDB databases.'
 
   commands :influx_cli => '/usr/bin/influx'
@@ -10,15 +11,15 @@ Puppet::Type.type(:influxdb_database).provide(:ruby) do
 
   def self.instances
     begin
-      output = influx_cli(['-execute', 'show databases'])
+      output = influx_cli([command_args, '-execute', 'show databases'].compact)
     rescue Puppet::ExecutionFailure => e
       return nil
     end
     databases = output.split("\n")[3..-1]
     databases.collect do |name|
-      new({:name    => name,
+      new(:name  => name,
         :ensure  => :present,
-      })
+      )
     end
   end
 
@@ -32,14 +33,14 @@ Puppet::Type.type(:influxdb_database).provide(:ruby) do
 
   def flush
     if @property_flush[:ensure] == :absent
-        influx_cli(['-execute', "drop database #{resource[:name]}"].compact)
+        influx_cli([command_args, '-execute', "drop database #{resource[:name]}"].compact)
         return
     end
-    influx_cli(['-execute', "create database #{resource[:name]}"].compact)
+    influx_cli([command_args, '-execute', "create database #{resource[:name]}"].compact)
   end
 
   def exists?
-    @property_hash[:ensure] == :present || false
+    @property_hash[:ensure] == :present
   end
 
   def create
