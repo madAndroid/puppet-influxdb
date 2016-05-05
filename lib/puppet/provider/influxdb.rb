@@ -7,7 +7,7 @@ class Puppet::Provider::InfluxDB < Puppet::Provider
 
   def self.auth_enabled?
     unless @property_hash.nil?
-      @property_hash[:admin_username].nil? false || true
+      @property_hash[:admin_username].nil? ? false : true
     end
   end
 
