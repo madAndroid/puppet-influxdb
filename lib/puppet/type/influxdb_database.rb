@@ -3,7 +3,7 @@ Puppet::Type.newtype(:influxdb_database) do
 
   ensurable
 
-  autorequire(:class) { 'influxdb::install' }
+  autorequire(:class) { 'influxdb::service' }
 
   newparam(:name, :namevar => true) do
     desc 'The name of the Influxdb database to manage.'

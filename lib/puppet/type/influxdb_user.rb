@@ -3,7 +3,7 @@ Puppet::Type.newtype(:influxdb_user) do
 
   ensurable
 
-  autorequire(:class) { 'influxdb::install' }
+  autorequire(:class) { 'influxdb::service' }
 
   newparam(:name, :namevar => true) do
     desc 'The name of the Influxdb user to manage.'
@@ -14,9 +14,23 @@ Puppet::Type.newtype(:influxdb_user) do
     newvalue(/\w*/)
   end
 
+  def munge_boolean(value)
+    case value
+    when true, "true", :true
+      :true
+    when false, "false", :false
+      :false
+    else
+      fail("munge_boolean only takes booleans")
+    end
+  end
+
   newproperty(:admin) do
     desc 'Whether the user should be an admin user'
     newvalues(:true, :false)
+    munge do |value|
+      @resource.munge_boolean(value)
+    end
   end
 
   newproperty(:admin_username) do
